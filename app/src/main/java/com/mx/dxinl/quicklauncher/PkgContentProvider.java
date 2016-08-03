@@ -13,11 +13,11 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import java.net.URI;
 import java.util.HashMap;
 
 /**
  * Created by Deng Xinliang on 2016/8/3.
+ *
  */
 public class PkgContentProvider extends ContentProvider {
     public static final String DATABASE_NAME = "QUICK_LAUNCHER";
@@ -28,7 +28,6 @@ public class PkgContentProvider extends ContentProvider {
     public static final Uri CONTENT_URI = Uri.parse(URI);
 
     private SQLiteDatabase db;
-    private HashMap<String, String> columnsMap;
 
     @Override
     public boolean onCreate() {
@@ -44,7 +43,6 @@ public class PkgContentProvider extends ContentProvider {
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
         qb.setTables(SELECTED_PKG_NAME);
 
-        qb.setProjectionMap(columnsMap);
         if (s1 == null || s1.equals("")) {
             s1 = "_id";
         }

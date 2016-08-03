@@ -9,6 +9,7 @@ import java.util.List;
 
 /**
  * Created by Deng Xinliang on 2016/8/3.
+ *
  */
 public class Util {
     public static List<ResolveInfo> getAppsInfo(Context context) {
