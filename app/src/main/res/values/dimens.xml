@@ -1,6 +1,8 @@
 <resources>
     <dimen name="trigger_width">10dp</dimen>
-    <dimen name="trigger_threshold">20dp</dimen>
     <dimen name="ic_list_stroke">1dp</dimen>
     <dimen name="ic_list_item_margin">2dp</dimen>
+    <dimen name="app_list_item_margin">5dp</dimen>
+    <dimen name="ic_list_bkg_radius">3dp</dimen>
+    <dimen name="ic_list_text_size">10sp</dimen>
 </resources>
