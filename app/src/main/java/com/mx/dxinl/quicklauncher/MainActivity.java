@@ -3,13 +3,12 @@ package com.mx.dxinl.quicklauncher;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -32,12 +31,12 @@ public class MainActivity extends AppCompatActivity {
     private AppListAdapter adapter;
 
     @Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-		startService(new Intent(MainActivity.this, LauncherService.class));
-	}
+        startService(new Intent(MainActivity.this, LauncherService.class));
+    }
 
     @Override
     protected void onResume() {
@@ -67,7 +66,8 @@ public class MainActivity extends AppCompatActivity {
 
                 List<String> delete = new ArrayList<>();
                 List<ResolveInfo> resolveInfo = adapter.getSelectedInfo();
-                List<ResolveInfo> add = new ArrayList<>(resolveInfo);
+                List<ResolveInfo> add = new ArrayList<>(resolveInfo.size());
+                add.addAll(resolveInfo);
                 while (c.moveToNext()) {
                     String name = c.getString(c.getColumnIndex(PkgContentProvider.PKG_NAME));
                     ResolveInfo foundInfo = null;
@@ -88,19 +88,25 @@ public class MainActivity extends AppCompatActivity {
 
                 if (delete.size() > 0) {
                     String[] names = delete.toArray(new String[delete.size()]);
-                    int count = getContentResolver().delete(
-                            PkgContentProvider.CONTENT_URI, PkgContentProvider.PKG_NAME + "= ?", names);
-                    if (count != delete.size()) {
-                        Log.e(this.getClass().getSimpleName(), "Deleting may be failed.");
+                    StringBuilder where = new StringBuilder();
+                    for (int i = 0, count = names.length; i < count; i++) {
+                        where.append(PkgContentProvider.PKG_NAME + "= \"").append(names[i]).append("\"");
+                        if (i < count - 1) {
+                            where.append(" OR ");
+                        }
                     }
+                    getContentResolver().delete(PkgContentProvider.CONTENT_URI, where.toString(), new String[]{});
                 }
 
                 if (add.size() > 0) {
-                    ContentValues values = new ContentValues();
-                    for (ResolveInfo info : add) {
-                        values.put(PkgContentProvider.PKG_NAME, info.activityInfo.packageName);
+                    int count = add.size();
+                    ContentValues[] valuesArray = new ContentValues[count];
+                    for (int i = 0; i < count; i++) {
+                        ContentValues values = new ContentValues();
+                        values.put(PkgContentProvider.PKG_NAME, add.get(i).activityInfo.packageName);
+                        valuesArray[i] = values;
                     }
-                    getContentResolver().insert(PkgContentProvider.CONTENT_URI, values);
+                    getContentResolver().bulkInsert(PkgContentProvider.CONTENT_URI, valuesArray);
                 }
                 return true;
 
