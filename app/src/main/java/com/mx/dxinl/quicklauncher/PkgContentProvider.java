@@ -49,13 +49,15 @@ public class PkgContentProvider extends ContentProvider {
             s1 = "_id";
         }
         Cursor cursor = qb.query(db, strings, s, strings1, null, null, s1);
-        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        if (getContext() != null) {
+            cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        }
         return cursor;
     }
 
     @Nullable
     @Override
-    public String getType(Uri uri) {
+    public String getType(@NonNull Uri uri) {
         return null;
     }
 
@@ -65,7 +67,9 @@ public class PkgContentProvider extends ContentProvider {
         long rowId = db.insert(SELECTED_PKG_NAME, "", contentValues);
         if (rowId >= 0) {
             Uri insertUri = ContentUris.withAppendedId(CONTENT_URI, rowId);
-            getContext().getContentResolver().notifyChange(insertUri, null);
+            if (getContext() != null) {
+                getContext().getContentResolver().notifyChange(insertUri, null);
+            }
             return insertUri;
         }
 
@@ -73,16 +77,20 @@ public class PkgContentProvider extends ContentProvider {
     }
 
     @Override
-    public int delete(Uri uri, String s, String[] strings) {
+    public int delete(@NonNull Uri uri, String s, String[] strings) {
         int count = db.delete(SELECTED_PKG_NAME, s, strings);
-        getContext().getContentResolver().notifyChange(uri, null);
+        if (getContext() != null) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
         return count;
     }
 
     @Override
-    public int update(Uri uri, ContentValues contentValues, String s, String[] strings) {
+    public int update(@NonNull Uri uri, ContentValues contentValues, String s, String[] strings) {
         int count = db.update(SELECTED_PKG_NAME, contentValues, s, strings);
-        getContext().getContentResolver().notify();
+        if (getContext() != null) {
+            getContext().getContentResolver().notify();
+        }
         return count;
     }
 

@@ -7,7 +7,11 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
@@ -23,6 +27,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,11 +35,23 @@ import java.util.List;
  * Created by dxinl on 2016/8/2.
  */
 public class LauncherService extends Service {
+    private static final int UPDATE_IC_LIST = 0x0408;
+    private final QuickLauncherHandler handler = new QuickLauncherHandler(this);
+
+    private final QuickLauncherAidlInterface.Stub binder = new QuickLauncherAidlInterface.Stub() {
+        @Override
+        public void updateLauncherList() throws RemoteException {
+            if (icList.getVisibility() == View.VISIBLE) {
+                handler.sendEmptyMessage(UPDATE_IC_LIST);
+            }
+        }
+    };
+    private RecyclerView icList;
 
     @Nullable
 	@Override
 	public IBinder onBind(Intent intent) {
-		return null;
+		return binder;
 	}
 
 	@Override
@@ -75,46 +92,54 @@ public class LauncherService extends Service {
     }
 
     private void initLauncherChildren(View launcher, int icListWidth, int launcherHeight) {
-		final RecyclerView icList = (RecyclerView) launcher.findViewById(R.id.ic_list);
+        icList = (RecyclerView) launcher.findViewById(R.id.ic_list);
 		final ImageView trigger = (ImageView) launcher.findViewById(R.id.touch_trigger);
 
-		initIconList(icListWidth, launcherHeight, icList, trigger);
-		initTrigger(icList, trigger);
+		initIconList(icListWidth, launcherHeight, trigger);
+		initTrigger(trigger);
 	}
 
-    private void initIconList(int icListWidth, int launcherHeight,
-                              final RecyclerView icList, final ImageView trigger) {
+    private void initIconList(int icListWidth, int launcherHeight, final ImageView trigger) {
         LinearLayout.LayoutParams icListParams =
                 new LinearLayout.LayoutParams(icListWidth, launcherHeight);
         icList.setLayoutParams(icListParams);
         final ItemClickCallback callback = new ItemClickCallback() {
             @Override
             public void onClicked() {
-                hideIconList(icList, trigger);
+                hideIconList(trigger);
             }
         };
         icList.setAdapter(new IconListAdapter(getAppsInfo(), callback));
         icList.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
     }
 
-    private void initTrigger(final RecyclerView icList, final ImageView trigger) {
+    private void initTrigger(final ImageView trigger) {
 		trigger.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				if (icList.getVisibility() == View.GONE) {
-                    showIconList(icList, trigger);
+                    showIconList(trigger);
 				} else {
-                    hideIconList(icList, trigger);
+                    hideIconList(trigger);
                 }
 			}
 		});
 	}
 
-    private void showIconList(RecyclerView icList, ImageView trigger) {
+    private void showIconList(ImageView trigger) {
         icList.setVisibility(View.VISIBLE);
+        updateIcList();
+        trigger.setImageResource(R.mipmap.arrow_reverse);
+    }
+
+    private void updateIcList() {
         IconListAdapter adapter = (IconListAdapter) icList.getAdapter();
         adapter.updateData(getAppsInfo());
-        trigger.setImageResource(R.mipmap.arrow_reverse);
+    }
+
+    private void hideIconList(ImageView trigger) {
+        icList.setVisibility(View.GONE);
+        trigger.setImageResource(R.mipmap.arrow);
     }
 
     private List<ResolveInfo> getAppsInfo() {
@@ -140,11 +165,6 @@ public class LauncherService extends Service {
         return showInfo;
     }
 
-    private void hideIconList(RecyclerView icList, ImageView trigger) {
-        icList.setVisibility(View.GONE);
-        trigger.setImageResource(R.mipmap.arrow);
-    }
-
     interface ItemClickCallback {
 		void onClicked();
 	}
@@ -152,7 +172,7 @@ public class LauncherService extends Service {
     /**
      * Created by Deng Xinliang on 2016/8/3.
      */
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    private static class ViewHolder extends RecyclerView.ViewHolder {
         private Context context;
         private ImageView appIcon;
         private TextView appName;
@@ -198,7 +218,7 @@ public class LauncherService extends Service {
     /**
      * Created by Deng Xinliang on 2016/8/3.
      */
-    static final class IconListAdapter extends RecyclerView.Adapter<ViewHolder> {
+    private static final class IconListAdapter extends RecyclerView.Adapter<ViewHolder> {
         private List<ResolveInfo> appsInfo = new ArrayList<>();
         private ItemClickCallback callback;
 
@@ -229,6 +249,26 @@ public class LauncherService extends Service {
         @Override
         public int getItemCount() {
             return appsInfo.size();
+        }
+    }
+
+    private static final class QuickLauncherHandler extends Handler {
+        private WeakReference<LauncherService> ref;
+
+        public QuickLauncherHandler(LauncherService service) {
+            ref = new WeakReference<>(service);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            LauncherService service = ref.get();
+            if (service == null) {
+                return;
+            }
+
+            if (msg.what == UPDATE_IC_LIST) {
+                service.updateIcList();
+            }
         }
     }
 }

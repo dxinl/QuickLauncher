@@ -1,13 +1,17 @@
 package com.mx.dxinl.quicklauncher;
 
+import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.GridLayoutManager;
@@ -25,10 +29,9 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
-    public static final String SELECTED_APP_PKG_NAME = "SELECTED_APP";
-    public static final String PKG_NAME_SEPARATOR = ";";
+public class MainActivity extends AppCompatActivity implements ServiceConnection {
     private AppListAdapter adapter;
+    private QuickLauncherAidlInterface binder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
         adapter = new AppListAdapter(this, Util.getAppsInfo(this));
         appList.setAdapter(adapter);
         appList.setLayoutManager(new GridLayoutManager(this, 3));
+
+        bindService(new Intent(MainActivity.this, LauncherService.class), this, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -108,6 +113,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                     getContentResolver().bulkInsert(PkgContentProvider.CONTENT_URI, valuesArray);
                 }
+
+                if (binder != null) {
+                    try {
+                        binder.updateLauncherList();
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
                 return true;
 
             case R.id.refresh:
@@ -115,6 +128,22 @@ public class MainActivity extends AppCompatActivity {
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+        binder = QuickLauncherAidlInterface.Stub.asInterface(iBinder);
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName componentName) {
+        binder = null;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unbindService(this);
     }
 
     private final class AppListAdapter extends RecyclerView.Adapter<ViewHolder> {
