@@ -8,7 +8,6 @@ import android.content.ServiceConnection;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -24,6 +23,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import com.mx.dxinl.quicklauncher.model.AppsInfoUtil;
+import com.mx.dxinl.quicklauncher.model.DatabaseHelper;
+import com.mx.dxinl.quicklauncher.model.DatabaseUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         super.onResume();
 
         final RecyclerView appList = (RecyclerView) findViewById(R.id.app_list);
-        adapter = new AppListAdapter(this, Util.getAppsInfo(this));
+        adapter = new AppListAdapter(this, AppsInfoUtil.getAppsInfo(this));
         appList.setAdapter(adapter);
         appList.setLayoutManager(new GridLayoutManager(this, 3));
 
@@ -62,8 +65,9 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.done:
-                Uri pkgName = Uri.parse(PkgContentProvider.URI);
-                Cursor c = getContentResolver().query(pkgName, null, null, null, PkgContentProvider.PKG_NAME);
+                DatabaseUtil dbUtil = DatabaseUtil.createDbUtil(getApplicationContext());
+
+                Cursor c = dbUtil.query(DatabaseUtil.QUERY_PKG_NAME_SQL, null);
                 if (c == null) {
                     return true;
                 }
@@ -73,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
                 List<ResolveInfo> add = new ArrayList<>(resolveInfo.size());
                 add.addAll(resolveInfo);
                 while (c.moveToNext()) {
-                    String name = c.getString(c.getColumnIndex(PkgContentProvider.PKG_NAME));
+                    String name = c.getString(c.getColumnIndex(DatabaseHelper.COLUMN_PKG_NAME));
                     ResolveInfo foundInfo = null;
                     for (ResolveInfo info : resolveInfo) {
                         if (info.activityInfo.packageName.equals(name)) {
@@ -94,12 +98,12 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
                     String[] names = delete.toArray(new String[delete.size()]);
                     StringBuilder where = new StringBuilder();
                     for (int i = 0, count = names.length; i < count; i++) {
-                        where.append(PkgContentProvider.PKG_NAME + "= \"").append(names[i]).append("\"");
+                        where.append(DatabaseHelper.COLUMN_PKG_NAME + "= \"").append(names[i]).append("\"");
                         if (i < count - 1) {
                             where.append(" OR ");
                         }
                     }
-                    getContentResolver().delete(PkgContentProvider.CONTENT_URI, where.toString(), new String[]{});
+                    dbUtil.delete(DatabaseHelper.TABLE, where.toString(), null);
                 }
 
                 if (add.size() > 0) {
@@ -107,10 +111,10 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
                     ContentValues[] valuesArray = new ContentValues[count];
                     for (int i = 0; i < count; i++) {
                         ContentValues values = new ContentValues();
-                        values.put(PkgContentProvider.PKG_NAME, add.get(i).activityInfo.packageName);
+                        values.put(DatabaseHelper.COLUMN_PKG_NAME, add.get(i).activityInfo.packageName);
                         valuesArray[i] = values;
                     }
-                    getContentResolver().bulkInsert(PkgContentProvider.CONTENT_URI, valuesArray);
+                    dbUtil.bulkInsert(DatabaseHelper.TABLE, valuesArray);
                 }
 
                 if (binder != null) {
@@ -123,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
                 return true;
 
             case R.id.refresh:
-                adapter.updateData(Util.getAppsInfo(this));
+                adapter.updateData(AppsInfoUtil.getAppsInfo(this));
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -158,14 +162,15 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         }
 
         private void initSelectedInfo() {
-            Uri pkgName = Uri.parse(PkgContentProvider.URI);
-            Cursor c = getContentResolver().query(pkgName, null, null, null, PkgContentProvider.PKG_NAME);
+            selectedInfo.clear();
+            Cursor c = DatabaseUtil.createDbUtil(getApplicationContext())
+                    .query(DatabaseUtil.QUERY_PKG_NAME_SQL, null);
             if (c == null) {
                 return;
             }
 
             while (c.moveToNext()) {
-                String name = c.getString(c.getColumnIndex(PkgContentProvider.PKG_NAME));
+                String name = c.getString(c.getColumnIndex(DatabaseHelper.COLUMN_PKG_NAME));
                 for (ResolveInfo info : appsInfo) {
                     if (info.activityInfo.packageName.equals(name)) {
                         selectedInfo.add(info);
