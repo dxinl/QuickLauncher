@@ -1,5 +1,7 @@
 package com.mx.dxinl.quicklauncher;
 
+import android.animation.Animator;
+import android.animation.ObjectAnimator;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,6 +10,8 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -20,15 +24,18 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
+import android.view.animation.Interpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.mx.dxinl.quicklauncher.model.AppsInfoUtil;
+import com.mx.dxinl.quicklauncher.model.Utils;
 import com.mx.dxinl.quicklauncher.model.DatabaseHelper;
 import com.mx.dxinl.quicklauncher.model.DatabaseUtil;
 
@@ -40,318 +47,394 @@ import java.util.List;
  * Created by dxinl on 2016/8/2.
  */
 public class LauncherService extends Service {
-    private static final int UPDATE_IC_LIST = 0x0408;
-    private static final String CONFIG_CHANGE_ACTION = "android.intent.action.CONFIGURATION_CHANGED";
+	private static final int UPDATE_IC_LIST = 0x0408;
+	private static final String CONFIG_CHANGE_ACTION = "android.intent.action.CONFIGURATION_CHANGED";
 
-    private final QuickLauncherHandler handler = new QuickLauncherHandler(this);
-    private RecyclerView icList;
-    private final QuickLauncherAidlInterface.Stub binder = new QuickLauncherAidlInterface.Stub() {
-        @Override
-        public void updateLauncherList() throws RemoteException {
-            if (icList.getVisibility() == View.VISIBLE) {
-                handler.sendEmptyMessage(UPDATE_IC_LIST);
-            }
-        }
-    };
-    private ImageView trigger;
-    private WindowManager windowManager;
-    private View launcher;
-    private final BroadcastReceiver configChangedReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals(CONFIG_CHANGE_ACTION)) {
-                onScreenOrientationChanged();
-            }
-        }
-    };
+	private final QuickLauncherHandler handler = new QuickLauncherHandler(this);
+	private final QuickLauncherAidlInterface.Stub binder = new QuickLauncherAidlInterface.Stub() {
+		@Override
+		public void updateLauncherList() throws RemoteException {
+			handler.sendEmptyMessage(UPDATE_IC_LIST);
+		}
+	};
+	private final BroadcastReceiver configChangedReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (intent.getAction().equals(CONFIG_CHANGE_ACTION)) {
+				onScreenOrientationChanged();
+			}
+		}
+	};
+	private final View.OnTouchListener TRIGGER_TOUCH_LISTENER = new View.OnTouchListener() {
+		private boolean dragState = false;
+		private float downX, downY, lastX, lastY;
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
+		@Override
+		public boolean onTouch(View view, MotionEvent event) {
+			switch (event.getAction()) {
+				case MotionEvent.ACTION_DOWN:
+					lastX = downX = event.getRawX();
+					lastY = downY = event.getRawY();
+					return true;
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(CONFIG_CHANGE_ACTION);
-        registerReceiver(configChangedReceiver, filter);
-    }
+				case MotionEvent.ACTION_MOVE:
+					float moveX = event.getRawX();
+					float moveY = event.getRawY();
+					if (!dragState && Math.abs(moveX - downX) > dragThreshold
+							&& Math.abs(moveY - downY) > dragThreshold) {
+						changeLauncherPosition((int) (moveX - lastX), (int) (moveY - lastY));
+						lastX = moveX;
+						lastY = moveY;
+						dragState = true;
+					} else if (dragState) {
+						changeLauncherPosition((int) (moveX - lastX), (int) (moveY - lastY));
+						lastX = moveX;
+						lastY = moveY;
+					}
+					return true;
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return binder;
-    }
+				case MotionEvent.ACTION_UP:
+					float upX = event.getRawX();
+					float upY = event.getRawY();
+					if (!dragState && Math.abs(upX - downX) < dragThreshold
+							&& Math.abs(upY - downY) < dragThreshold) {
+						if (icList.getVisibility() == View.GONE) {
+							showIconList();
+						} else {
+							hideIconList();
+						}
+					} else if (dragState) {
+						stickScreenEdge();
+						dragState = false;
+					}
+					return true;
+			}
+			return false;
+		}
+	};
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.e("test", "onStart");
-        performCreateLauncher();
-        return super.onStartCommand(intent, flags, startId);
-    }
+	private float dragThreshold;
+	private View launcher;
+	private ImageView trigger;
+	private RecyclerView icList;
+	private WindowManager windowManager;
 
-    private void performCreateLauncher() {
-        if (launcher == null) {
-            Context context = getApplicationContext();
-            LayoutInflater inflater = LayoutInflater.from(context);
-            launcher = inflater.inflate(R.layout.service_launcher, null);
-            LayoutParams params = generateLayoutParams();
+	@Override
+	public void onCreate() {
+		super.onCreate();
 
-            windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-            windowManager.addView(launcher, params);
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(CONFIG_CHANGE_ACTION);
+		registerReceiver(configChangedReceiver, filter);
+	}
 
-            initLauncherChildren(launcher);
-        }
-    }
+	@Nullable
+	@Override
+	public IBinder onBind(Intent intent) {
+		return binder;
+	}
 
-    @NonNull
-    private LayoutParams generateLayoutParams() {
-        LayoutParams params = new LayoutParams();
-        params.type = LayoutParams.TYPE_PHONE;
-        params.flags = LayoutParams.FLAG_NOT_FOCUSABLE | LayoutParams.FLAG_NOT_TOUCH_MODAL;
-        params.width = LayoutParams.WRAP_CONTENT;
-        params.height = LayoutParams.WRAP_CONTENT;
-        params.format = LayoutParams.LAYOUT_CHANGED;
-        params.gravity = Gravity.CENTER_VERTICAL | Gravity.START;
-        return params;
-    }
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		Log.e("test", "onStart");
+		performCreateLauncher();
+		return super.onStartCommand(intent, flags, startId);
+	}
 
-    private void initLauncherChildren(View launcher) {
-        icList = (RecyclerView) launcher.findViewById(R.id.ic_list);
-        trigger = (ImageView) launcher.findViewById(R.id.touch_trigger);
+	private void performCreateLauncher() {
+		if (launcher == null) {
+			Context context = getApplicationContext();
+			LayoutInflater inflater = LayoutInflater.from(context);
 
-        initIconList();
-        initTrigger();
-    }
+			dragThreshold = ViewConfiguration.get(context).getScaledTouchSlop();
 
-    private void initIconList() {
-        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-        int screenWidth = displayMetrics.widthPixels;
-        int screenHeight = displayMetrics.heightPixels;
-        final int icListWidth;
-        final int icListHeight;
-        if (screenHeight < screenWidth) {
-            icListWidth = screenHeight / 6;
-            icListHeight = screenHeight / 4 * 3;
-        } else {
-            icListWidth = screenWidth / 6;
-            icListHeight = screenHeight / 5 * 3;
-        }
 
-        ViewGroup.LayoutParams params = icList.getLayoutParams();
-        if (params == null) {
-            params = new LinearLayout.LayoutParams(icListWidth, icListHeight);
-        } else {
-            params.width = icListWidth;
-            params.height = icListHeight;
-        }
-        icList.setLayoutParams(params);
-        icList.setAdapter(new IconListAdapter(getAppsInfo()));
-        icList.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
-    }
+			launcher = inflater.inflate(R.layout.service_launcher, null);
+			LayoutParams params = generateLayoutParams();
 
-    private void initTrigger() {
-        changeTriggerSize(false);
-        trigger.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (icList.getVisibility() == View.GONE) {
-                    showIconList();
-                } else {
-                    hideIconList();
-                }
-            }
-        });
-    }
+			windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+			windowManager.addView(launcher, params);
 
-    private void changeTriggerSize(boolean icListVisible) {
-        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-        int screenWidth = displayMetrics.widthPixels;
-        int screenHeight = displayMetrics.heightPixels;
-        final int size;
-        if (screenHeight < screenWidth) {
-            size = screenHeight / 6;
-        } else {
-            size = screenWidth / 6;
-        }
+			initLauncherChildren(launcher);
+		}
+	}
 
-        int width, height = size / 2;
-        if (icListVisible) {
-            width = size;
-        } else {
-            width = size / 2;
-        }
-        width -= 2 * getResources().getDimensionPixelSize(R.dimen.trigger_margin);
-        ViewGroup.LayoutParams params = trigger.getLayoutParams();
-        if (params == null) {
-            params = new LinearLayout.LayoutParams(width, height);
-        } else {
-            params.width = width;
-            params.height = height;
-        }
+	@NonNull
+	private LayoutParams generateLayoutParams() {
+		LayoutParams params = new LayoutParams();
+		//noinspection WrongConstant
+		params.type = getParamsType();
+		params.flags = LayoutParams.FLAG_NOT_FOCUSABLE | LayoutParams.FLAG_NOT_TOUCH_MODAL;
+		params.width = LayoutParams.WRAP_CONTENT;
+		params.height = LayoutParams.WRAP_CONTENT;
+		params.format = LayoutParams.LAYOUT_CHANGED;
+		params.gravity = Gravity.CENTER_VERTICAL | Gravity.START;
+		return params;
+	}
 
-        trigger.setLayoutParams(params);
-    }
+	private int getParamsType() {
+		int type;
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+			type = LayoutParams.TYPE_PHONE;
+		} else {
+			type = LayoutParams.TYPE_TOAST;
+		}
+		return type;
+	}
 
-    private void showIconList() {
-        icList.setVisibility(View.VISIBLE);
-        updateIcList();
-        changeTriggerSize(true);
-        trigger.setImageResource(R.mipmap.arrow_reverse);
-    }
+	private void initLauncherChildren(View launcher) {
+		icList = (RecyclerView) launcher.findViewById(R.id.ic_list);
+		trigger = (ImageView) launcher.findViewById(R.id.touch_trigger);
 
-    private void updateIcList() {
-        IconListAdapter adapter = (IconListAdapter) icList.getAdapter();
-        adapter.updateData(getAppsInfo());
-    }
+		initIconList();
+		initTrigger();
+	}
 
-    private void hideIconList() {
-        icList.setVisibility(View.GONE);
-        changeTriggerSize(false);
-        trigger.setImageResource(R.mipmap.quick_launcher);
-    }
+	private void initIconList() {
+		int screenWidth = Utils.getScreenWidth(getApplicationContext());
+		int screenHeight = Utils.getScreenHeight(getApplicationContext());
+		final int icListWidth;
+		final int icListHeight;
+		if (screenHeight < screenWidth) {
+			icListWidth = screenHeight / 6;
+			icListHeight = screenHeight / 4 * 3;
+		} else {
+			icListWidth = screenWidth / 6;
+			icListHeight = screenHeight / 5 * 3;
+		}
 
-    private List<ResolveInfo> getAppsInfo() {
-        List<ResolveInfo> allInfo = AppsInfoUtil.getAppsInfo(this);
-        List<ResolveInfo> showInfo = new ArrayList<>();
+		ViewGroup.LayoutParams params = icList.getLayoutParams();
+		if (params == null) {
+			params = new LinearLayout.LayoutParams(icListWidth, icListHeight);
+		} else {
+			params.width = icListWidth;
+			params.height = icListHeight;
+		}
+		icList.setLayoutParams(params);
+		icList.setAdapter(new IconListAdapter(getAppsInfo()));
+		icList.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+	}
 
-        DatabaseUtil dbUtil = DatabaseUtil.createDbUtil(getApplicationContext());
-        Cursor c = dbUtil.query(DatabaseUtil.QUERY_PKG_NAME_SQL, null);
-        if (c == null) {
-            return showInfo;
-        }
-        while (c.moveToNext()) {
-            String name = c.getString(c.getColumnIndex(DatabaseHelper.COLUMN_PKG_NAME));
-            for (ResolveInfo info : allInfo) {
-                if (info.activityInfo.packageName.equals(name)) {
-                    showInfo.add(info);
-                }
-            }
-        }
-        c.close();
+	private void initTrigger() {
+		changeTriggerSize(false);
+		trigger.setOnTouchListener(TRIGGER_TOUCH_LISTENER);
+	}
 
-        return showInfo;
-    }
+	private void changeLauncherPosition(int x, int y) {
+		LayoutParams params = (LayoutParams) launcher.getLayoutParams();
+		params.x += x;
+		params.y += y;
 
-    private void onScreenOrientationChanged() {
-        windowManager.removeView(launcher);
-    }
+		windowManager.updateViewLayout(launcher, params);
+	}
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        unregisterReceiver(configChangedReceiver);
-    }
+	private void stickScreenEdge() {
+		final LayoutParams params = (LayoutParams) launcher.getLayoutParams();
+		int screenWidth = Utils.getScreenWidth(getApplicationContext());
 
-    private static final class QuickLauncherHandler extends Handler {
-        private WeakReference<LauncherService> ref;
+		if (params.x > screenWidth / 2) {
+			params.x = screenWidth;
+		} else {
+			params.x = 0;
+		}
 
-        public QuickLauncherHandler(LauncherService service) {
-            ref = new WeakReference<>(service);
-        }
+		windowManager.updateViewLayout(launcher, params);
+	}
 
-        @Override
-        public void handleMessage(Message msg) {
-            LauncherService service = ref.get();
-            if (service == null) {
-                return;
-            }
+	private void changeTriggerSize(boolean icListVisible) {
+		int screenWidth = Utils.getScreenWidth(getApplicationContext());
+		int screenHeight = Utils.getScreenHeight(getApplicationContext());
+		final int size;
+		if (screenHeight < screenWidth) {
+			size = screenHeight / 6;
+		} else {
+			size = screenWidth / 6;
+		}
 
-            if (msg.what == UPDATE_IC_LIST) {
-                service.updateIcList();
-            }
-        }
-    }
+		int width, height = size / 2;
+		if (icListVisible) {
+			width = size;
+		} else {
+			width = size / 2;
+		}
+		width -= 2 * getResources().getDimensionPixelSize(R.dimen.trigger_margin);
+		ViewGroup.LayoutParams params = trigger.getLayoutParams();
+		if (params == null) {
+			params = new LinearLayout.LayoutParams(width, height);
+		} else {
+			params.width = width;
+			params.height = height;
+		}
 
-    /**
-     * Created by Deng Xinliang on 2016/8/3.
-     */
-    private final class ViewHolder extends RecyclerView.ViewHolder {
-        private final PackageManager packageManager;
-        private Context context;
-        private ImageView appIcon;
-        private TextView appName;
+		trigger.setLayoutParams(params);
+	}
 
-        public ViewHolder(View itemView) {
-            super(itemView);
-            context = itemView.getContext();
+	private void showIconList() {
+		launcher.setAlpha(1f);
+		icList.setVisibility(View.VISIBLE);
+		updateIcList();
+		changeTriggerSize(true);
+		trigger.setImageResource(R.mipmap.arrow_reverse);
+	}
 
-            appIcon = (ImageView) itemView.findViewById(R.id.icon_app);
-            DisplayMetrics displayMetrics = context.getApplicationContext()
-                    .getResources().getDisplayMetrics();
-            int screenWidth = displayMetrics.widthPixels;
-            int screenHeight = displayMetrics.heightPixels;
-            int size;
-            if (screenHeight < screenWidth) {
-                size = screenHeight;
-            } else {
-                size = screenWidth;
-            }
+	private void updateIcList() {
+		IconListAdapter adapter = (IconListAdapter) icList.getAdapter();
+		adapter.updateData(getAppsInfo());
+	}
 
-            final int appIconMargin = getResources().getDimensionPixelSize(R.dimen.ic_list_item_margin);
-            final int appIconSize = size / 6 - 2 * appIconMargin;
-            ViewGroup.LayoutParams params = appIcon.getLayoutParams();
-            if (params == null) {
-                params = new LinearLayout.LayoutParams(appIconSize, appIconSize);
-            } else {
-                params.width = appIconSize;
-                params.height = appIconSize;
-            }
-            appIcon.setLayoutParams(params);
+	private void hideIconList() {
+		launcher.setAlpha(0.5f);
+		icList.setVisibility(View.GONE);
+		changeTriggerSize(false);
+		trigger.setImageResource(R.mipmap.quick_launcher);
+	}
 
-            appName = (TextView) itemView.findViewById(R.id.name_app);
-            packageManager = context.getPackageManager();
-        }
+	private List<ResolveInfo> getAppsInfo() {
+		List<ResolveInfo> allInfo = Utils.getAppsInfo(this);
+		List<ResolveInfo> showInfo = new ArrayList<>();
 
-        public void initItemView(ResolveInfo info) {
-            appIcon.setImageDrawable(info.loadIcon(packageManager));
-            appName.setText(info.loadLabel(packageManager));
-            setOnClickListener(info);
-        }
+		DatabaseUtil dbUtil = DatabaseUtil.createDbUtil(getApplicationContext());
+		Cursor c = dbUtil.query(DatabaseUtil.QUERY_PKG_NAME_SQL, null);
+		if (c == null) {
+			return showInfo;
+		}
+		while (c.moveToNext()) {
+			String name = c.getString(c.getColumnIndex(DatabaseHelper.COLUMN_PKG_NAME));
+			for (ResolveInfo info : allInfo) {
+				if (info.activityInfo.packageName.equals(name)) {
+					showInfo.add(info);
+				}
+			}
+		}
+		c.close();
 
-        public void setOnClickListener(final ResolveInfo info) {
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent launchIntent = packageManager
-                            .getLaunchIntentForPackage(info.activityInfo.packageName);
-                    if (launchIntent != null) {
-                        context.startActivity(launchIntent);
-                    }
-                    hideIconList();
-                }
-            });
-        }
-    }
+		return showInfo;
+	}
 
-    /**
-     * Created by Deng Xinliang on 2016/8/3.
-     */
-    private final class IconListAdapter extends RecyclerView.Adapter<ViewHolder> {
-        private List<ResolveInfo> appsInfo = new ArrayList<>();
+	private void onScreenOrientationChanged() {
+		windowManager.removeView(launcher);
+	}
 
-        public IconListAdapter(List<ResolveInfo> appsInfo) {
-            this.appsInfo.addAll(appsInfo);
-        }
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		unregisterReceiver(configChangedReceiver);
+	}
 
-        public void updateData(List<ResolveInfo> appsInfo) {
-            this.appsInfo.clear();
-            this.appsInfo.addAll(appsInfo);
-            notifyDataSetChanged();
-        }
+	private static final class QuickLauncherHandler extends Handler {
+		private WeakReference<LauncherService> ref;
 
-        @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-            return new ViewHolder(inflater.inflate(R.layout.item_icon_list, parent, false));
-        }
+		public QuickLauncherHandler(LauncherService service) {
+			ref = new WeakReference<>(service);
+		}
 
-        @Override
-        public void onBindViewHolder(ViewHolder holder, int position) {
-            ResolveInfo info = appsInfo.get(position);
-            holder.initItemView(info);
-        }
+		@Override
+		public void handleMessage(Message msg) {
+			LauncherService service = ref.get();
+			if (service == null) {
+				return;
+			}
 
-        @Override
-        public int getItemCount() {
-            return appsInfo.size();
-        }
-    }
+			if (msg.what == UPDATE_IC_LIST) {
+				if (service.icList.getVisibility() == View.VISIBLE) {
+					service.updateIcList();
+				} else {
+					service.showIconList();
+				}
+			}
+		}
+	}
+
+	/**
+	 * Created by Deng Xinliang on 2016/8/3.
+	 */
+	private final class ViewHolder extends RecyclerView.ViewHolder {
+		private final PackageManager packageManager;
+		private Context context;
+		private ImageView appIcon;
+		private TextView appName;
+
+		public ViewHolder(View itemView) {
+			super(itemView);
+			context = itemView.getContext();
+
+			appIcon = (ImageView) itemView.findViewById(R.id.icon_app);
+			int screenWidth = Utils.getScreenWidth(getApplicationContext());
+			int screenHeight = Utils.getScreenHeight(getApplicationContext());
+			int size;
+			if (screenHeight < screenWidth) {
+				size = screenHeight;
+			} else {
+				size = screenWidth;
+			}
+
+			final int appIconMargin = getResources().getDimensionPixelSize(R.dimen.ic_list_item_margin);
+			final int appIconSize = size / 6 - 2 * appIconMargin;
+			ViewGroup.LayoutParams params = appIcon.getLayoutParams();
+			if (params == null) {
+				params = new LinearLayout.LayoutParams(appIconSize, appIconSize);
+			} else {
+				params.width = appIconSize;
+				params.height = appIconSize;
+			}
+			appIcon.setLayoutParams(params);
+
+			appName = (TextView) itemView.findViewById(R.id.name_app);
+			packageManager = context.getPackageManager();
+		}
+
+		public void initItemView(ResolveInfo info) {
+			appIcon.setImageDrawable(info.loadIcon(packageManager));
+			appName.setText(info.loadLabel(packageManager));
+			setOnClickListener(info);
+		}
+
+		public void setOnClickListener(final ResolveInfo info) {
+			itemView.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					Intent launchIntent = packageManager
+							.getLaunchIntentForPackage(info.activityInfo.packageName);
+					if (launchIntent != null) {
+						context.startActivity(launchIntent);
+					}
+					hideIconList();
+				}
+			});
+		}
+	}
+
+	/**
+	 * Created by Deng Xinliang on 2016/8/3.
+	 */
+	private final class IconListAdapter extends RecyclerView.Adapter<ViewHolder> {
+		private List<ResolveInfo> appsInfo = new ArrayList<>();
+
+		public IconListAdapter(List<ResolveInfo> appsInfo) {
+			this.appsInfo.addAll(appsInfo);
+		}
+
+		public void updateData(List<ResolveInfo> appsInfo) {
+			this.appsInfo.clear();
+			this.appsInfo.addAll(appsInfo);
+			notifyDataSetChanged();
+		}
+
+		@Override
+		public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+			LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+			return new ViewHolder(inflater.inflate(R.layout.item_icon_list, parent, false));
+		}
+
+		@Override
+		public void onBindViewHolder(ViewHolder holder, int position) {
+			ResolveInfo info = appsInfo.get(position);
+			holder.initItemView(info);
+		}
+
+		@Override
+		public int getItemCount() {
+			return appsInfo.size();
+		}
+	}
 }

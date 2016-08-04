@@ -24,7 +24,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.mx.dxinl.quicklauncher.model.AppsInfoUtil;
+import com.mx.dxinl.quicklauncher.model.Utils;
 import com.mx.dxinl.quicklauncher.model.DatabaseHelper;
 import com.mx.dxinl.quicklauncher.model.DatabaseUtil;
 
@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         super.onResume();
 
         final RecyclerView appList = (RecyclerView) findViewById(R.id.app_list);
-        adapter = new AppListAdapter(this, AppsInfoUtil.getAppsInfo(this));
+        adapter = new AppListAdapter(this, Utils.getAppsInfo(this));
         appList.setAdapter(adapter);
         appList.setLayoutManager(new GridLayoutManager(this, 3));
 
@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
                 return true;
 
             case R.id.refresh:
-                adapter.updateData(AppsInfoUtil.getAppsInfo(this));
+                adapter.updateData(Utils.getAppsInfo(this));
                 return true;
         }
         return super.onOptionsItemSelected(item);
