@@ -17,7 +17,6 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -68,7 +67,6 @@ public class LauncherService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.e("test", "onCreate");
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(CONFIG_CHANGE_ACTION);
@@ -83,7 +81,6 @@ public class LauncherService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.e("test", "onStart");
         performCreateLauncher();
         return super.onStartCommand(intent, flags, startId);
     }
@@ -133,8 +130,6 @@ public class LauncherService extends Service {
             icListWidth = screenWidth / 6;
             icListHeight = screenHeight / 5 * 3;
         }
-
-        Log.e("icListWidth", String.valueOf(icListWidth));
 
         ViewGroup.LayoutParams params = icList.getLayoutParams();
         if (params == null) {
@@ -232,14 +227,12 @@ public class LauncherService extends Service {
     }
 
     private void onScreenOrientationChanged() {
-        Log.e("test", "onScreenOrientationChanged");
         windowManager.removeView(launcher);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.e("onDestroy", "onDestroy");
         unregisterReceiver(configChangedReceiver);
     }
 
@@ -290,7 +283,6 @@ public class LauncherService extends Service {
 
             final int appIconMargin = getResources().getDimensionPixelSize(R.dimen.ic_list_item_margin);
             final int appIconSize = size / 6 - 2 * appIconMargin;
-            Log.e("appIconSize", String.valueOf(appIconSize));
             ViewGroup.LayoutParams params = appIcon.getLayoutParams();
             if (params == null) {
                 params = new LinearLayout.LayoutParams(appIconSize, appIconSize);
