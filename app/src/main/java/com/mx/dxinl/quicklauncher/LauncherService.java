@@ -17,6 +17,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -81,20 +82,23 @@ public class LauncherService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.e("test", "onStart");
         performCreateLauncher();
         return super.onStartCommand(intent, flags, startId);
     }
 
     private void performCreateLauncher() {
-        Context context = getApplicationContext();
-        LayoutInflater inflater = LayoutInflater.from(context);
-        launcher = inflater.inflate(R.layout.service_launcher, null);
-        LayoutParams params = generateLayoutParams();
+        if (launcher == null) {
+            Context context = getApplicationContext();
+            LayoutInflater inflater = LayoutInflater.from(context);
+            launcher = inflater.inflate(R.layout.service_launcher, null);
+            LayoutParams params = generateLayoutParams();
 
-        windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        windowManager.addView(launcher, params);
+            windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+            windowManager.addView(launcher, params);
 
-        initLauncherChildren(launcher);
+            initLauncherChildren(launcher);
+        }
     }
 
     @NonNull
