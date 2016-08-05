@@ -1,7 +1,10 @@
-package com.mx.dxinl.quicklauncher;
+package com.mx.dxinl.quicklauncher.services;
 
+import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.AccessibilityServiceInfo;
 import android.animation.Animator;
 import android.animation.ValueAnimator;
+import android.app.AlertDialog;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -17,6 +20,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
@@ -30,10 +34,14 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
+import android.view.accessibility.AccessibilityManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.mx.dxinl.quicklauncher.InfoActivity;
+import com.mx.dxinl.quicklauncher.QuickLauncherAidlInterface;
+import com.mx.dxinl.quicklauncher.R;
 import com.mx.dxinl.quicklauncher.model.DatabaseHelper;
 import com.mx.dxinl.quicklauncher.model.DatabaseUtil;
 import com.mx.dxinl.quicklauncher.model.Utils;
@@ -51,7 +59,10 @@ public class LauncherService extends Service {
     private static final String PORTRAIT_POSITION_Y = "Portrait_Y";
     private static final String LANDSCAPE_POSITION_X = "Landscape_X";
     private static final String LANDSCAPE_POSITION_Y = "Landscape_Y";
-    private static final String CONFIG_CHANGE_ACTION = "android.intent.action.CONFIGURATION_CHANGED";
+    private static final String CONFIG_CHANGE_ACTION = "android.intent.action" +
+            ".CONFIGURATION_CHANGED";
+    private static final String ACCESSIBILITY_NAME = "com.mx.dxinl.quicklauncher.service" +
+            ".NavBtnAccessibilityService";
 
     private static final int UPDATE_IC_LIST = 0x0408;
 
@@ -66,6 +77,7 @@ public class LauncherService extends Service {
 
     private float moveThreshold;
     private boolean hasOrientationChanged;
+    private AlertDialog dialog;
     private View launcher;
     private ImageView trigger;
     private RecyclerView icList;
@@ -78,6 +90,7 @@ public class LauncherService extends Service {
             }
         }
     };
+    private Intent accessibilityIntent;
 
     @Override
     public void onCreate() {
@@ -86,9 +99,31 @@ public class LauncherService extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction(CONFIG_CHANGE_ACTION);
         registerReceiver(configChangedReceiver, filter);
+
+        accessibilityIntent = new Intent(this, NavBtnAccessibilityService.class);
+        if (!checkAccessibility()) {
+            requestAccessibility();
+        } else {
+            startService(accessibilityIntent);
+        }
     }
 
-    ;
+    private void requestAccessibility() {
+        startActivity(new Intent(this, InfoActivity.class));
+    }
+
+    private boolean checkAccessibility() {
+        AccessibilityManager accessibilityManager
+                = (AccessibilityManager) getSystemService(Context.ACCESSIBILITY_SERVICE);
+        List<AccessibilityServiceInfo> infoList = accessibilityManager
+                .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
+        for (AccessibilityServiceInfo info : infoList) {
+            if (info.getId().equals(ACCESSIBILITY_NAME)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @Nullable
     @Override
@@ -363,6 +398,7 @@ public class LauncherService extends Service {
     public void onDestroy() {
         super.onDestroy();
         unregisterReceiver(configChangedReceiver);
+        stopService(accessibilityIntent);
     }
 
     private static final class QuickLauncherHandler extends Handler {
@@ -417,7 +453,16 @@ public class LauncherService extends Service {
                             return true;
                         }
 
-                        // moving actions
+                        AccessibilityService service = NavBtnAccessibilityService.getInstance();
+                        if (service != null) {
+                            service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS);
+                        } else {
+                            if (checkAccessibility()) {
+                                startService(accessibilityIntent);
+                            } else {
+                                requestAccessibility();
+                            }
+                        }
                     } else if (!canDrag && isLongPress()) {
                         canDrag = true;
                         if (!isIcListVisible()) {

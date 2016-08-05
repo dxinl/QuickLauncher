@@ -2,4 +2,6 @@
     <string name="app_name">QuickLauncher</string>
     <string name="refresh">refresh</string>
     <string name="done">done</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
 </resources>

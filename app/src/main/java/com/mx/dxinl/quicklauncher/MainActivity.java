@@ -27,6 +27,7 @@ import android.widget.TextView;
 import com.mx.dxinl.quicklauncher.model.Utils;
 import com.mx.dxinl.quicklauncher.model.DatabaseHelper;
 import com.mx.dxinl.quicklauncher.model.DatabaseUtil;
+import com.mx.dxinl.quicklauncher.services.LauncherService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +45,12 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        bindService(new Intent(MainActivity.this, LauncherService.class), this, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
 
@@ -51,8 +58,6 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         adapter = new AppListAdapter(this, Utils.getAppsInfo(this));
         appList.setAdapter(adapter);
         appList.setLayoutManager(new GridLayoutManager(this, 3));
-
-        bindService(new Intent(MainActivity.this, LauncherService.class), this, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -144,8 +149,8 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onStop() {
+        super.onStop();
         unbindService(this);
     }
 
