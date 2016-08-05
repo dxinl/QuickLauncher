@@ -21,7 +21,7 @@
 
         <activity
             android:name=".InfoActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+            android:theme="@style/TranslucentTheme" />
 
         <service
             android:name=".services.LauncherService"

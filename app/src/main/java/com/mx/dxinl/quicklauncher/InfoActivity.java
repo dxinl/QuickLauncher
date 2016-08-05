@@ -36,6 +36,7 @@ public class InfoActivity extends AppCompatActivity {
                         finish();
                     }
                 })
+                .setCancelable(false)
                 .create();
         dialog.show();
     }

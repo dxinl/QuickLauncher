@@ -61,7 +61,7 @@ public class LauncherService extends Service {
     private static final String LANDSCAPE_POSITION_Y = "Landscape_Y";
     private static final String CONFIG_CHANGE_ACTION = "android.intent.action" +
             ".CONFIGURATION_CHANGED";
-    private static final String ACCESSIBILITY_NAME = "com.mx.dxinl.quicklauncher.service" +
+    private static final String ACCESSIBILITY_NAME = "com.mx.dxinl.quicklauncher/.service" +
             ".NavBtnAccessibilityService";
 
     private static final int UPDATE_IC_LIST = 0x0408;
@@ -77,7 +77,6 @@ public class LauncherService extends Service {
 
     private float moveThreshold;
     private boolean hasOrientationChanged;
-    private AlertDialog dialog;
     private View launcher;
     private ImageView trigger;
     private RecyclerView icList;
@@ -109,14 +108,16 @@ public class LauncherService extends Service {
     }
 
     private void requestAccessibility() {
-        startActivity(new Intent(this, InfoActivity.class));
+        Intent intent = new Intent(this, InfoActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
     }
 
     private boolean checkAccessibility() {
         AccessibilityManager accessibilityManager
                 = (AccessibilityManager) getSystemService(Context.ACCESSIBILITY_SERVICE);
-        List<AccessibilityServiceInfo> infoList = accessibilityManager
-                .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
+        List<AccessibilityServiceInfo> infoList
+		        = accessibilityManager.getInstalledAccessibilityServiceList();
         for (AccessibilityServiceInfo info : infoList) {
             if (info.getId().equals(ACCESSIBILITY_NAME)) {
                 return true;
@@ -430,8 +431,8 @@ public class LauncherService extends Service {
 
         private boolean moving = false;
         private boolean canDrag = false;
-        private boolean dragging = false;
-        private long downTime;
+	    private boolean dragging = false;
+	    private long downTime;
         private float downX, downY, lastX, lastY;
 
         @Override
@@ -444,6 +445,10 @@ public class LauncherService extends Service {
                     return true;
 
                 case MotionEvent.ACTION_MOVE:
+	                if (moving) {
+		                return true;
+	                }
+
                     float moveX = event.getRawX();
                     float moveY = event.getRawY();
 
@@ -453,16 +458,7 @@ public class LauncherService extends Service {
                             return true;
                         }
 
-                        AccessibilityService service = NavBtnAccessibilityService.getInstance();
-                        if (service != null) {
-                            service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS);
-                        } else {
-                            if (checkAccessibility()) {
-                                startService(accessibilityIntent);
-                            } else {
-                                requestAccessibility();
-                            }
-                        }
+	                    performGlobalAction(getAction(moveX, moveY));
                     } else if (!canDrag && isLongPress()) {
                         canDrag = true;
                         if (!isIcListVisible()) {
@@ -507,7 +503,50 @@ public class LauncherService extends Service {
             return false;
         }
 
-        private boolean isIcListVisible() {
+	    private int getAction(float moveX, float moveY) {
+		    int action;
+		    if (isHorizontalMove(moveX, moveY)) {
+			    if (isRightMove(moveX)) {
+				    action = AccessibilityService.GLOBAL_ACTION_BACK;
+			    } else {
+				    action = AccessibilityService.GLOBAL_ACTION_RECENTS;
+			    }
+		    } else {
+			    if (isDownMove(moveY)) {
+				    action = AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS;
+			    } else {
+				    action = AccessibilityService.GLOBAL_ACTION_HOME;
+			    }
+		    }
+		    return action;
+	    }
+
+	    private boolean isHorizontalMove(float moveX, float moveY) {
+		    return Math.abs(moveX - downX) > Math.abs(moveY - downY);
+	    }
+
+	    private boolean isDownMove(float moveY) {
+		    return moveY - downY > 0;
+	    }
+
+	    private boolean isRightMove(float moveX) {
+		    return moveX - downX > 0;
+	    }
+
+	    private void performGlobalAction(int action) {
+		    AccessibilityService service = NavBtnAccessibilityService.getInstance();
+		    if (service != null) {
+		        service.performGlobalAction(action);
+		    } else {
+		        if (checkAccessibility()) {
+		            startService(accessibilityIntent);
+		        } else {
+		            requestAccessibility();
+		        }
+		    }
+	    }
+
+	    private boolean isIcListVisible() {
             return icList.getVisibility() == View.VISIBLE;
         }
 
