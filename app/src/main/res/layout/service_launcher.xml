@@ -10,7 +10,7 @@
         android:id="@+id/ic_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="center_horizontal"
+        android:layout_centerHorizontal="true"
         android:paddingBottom="@dimen/ic_list_item_margin"
         android:paddingTop="@dimen/ic_list_item_margin"
         android:visibility="gone"/>
