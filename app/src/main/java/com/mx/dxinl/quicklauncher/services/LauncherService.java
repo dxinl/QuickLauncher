@@ -23,6 +23,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
@@ -80,7 +81,6 @@ public class LauncherService extends Service {
 	private final TriggerTouchListener triggerTouchListener = new TriggerTouchListener();
 
 	private float moveThreshold;
-	private boolean hasOrientationChanged;
 	private View launcher;
 	private ImageView trigger;
 	private RecyclerView icList;
@@ -112,8 +112,7 @@ public class LauncherService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		if (launcher == null || hasOrientationChanged) {
-			hasOrientationChanged = false;
+		if (launcher == null) {
 			performCreateLauncher();
 		}
 		return super.onStartCommand(intent, flags, startId);
@@ -131,7 +130,7 @@ public class LauncherService extends Service {
 		windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 		windowManager.addView(launcher, params);
 
-		initLauncherChildren(launcher);
+		initLauncherChildren();
 	}
 
 	@NonNull
@@ -174,7 +173,7 @@ public class LauncherService extends Service {
 		return position;
 	}
 
-	private void initLauncherChildren(View launcher) {
+	private void initLauncherChildren() {
 		icList = (RecyclerView) launcher.findViewById(R.id.ic_list);
 		trigger = (ImageView) launcher.findViewById(R.id.touch_trigger);
 
@@ -370,7 +369,7 @@ public class LauncherService extends Service {
 
 	private void onScreenOrientationChanged() {
 		windowManager.removeView(launcher);
-		hasOrientationChanged = true;
+		performCreateLauncher();
 	}
 
 	private void requestAccessibility() {
