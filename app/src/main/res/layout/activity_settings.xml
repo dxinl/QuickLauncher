@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:layout_margin="@dimen/activity_horizontal_margin"
+              android:orientation="vertical"
+              tools:context=".activity.SettingActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/gesture_settings"
+        android:textColor="@android:color/black"
+        android:textSize="@dimen/settings_title_size"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/divider_height"
+        android:layout_marginBottom="@dimen/divider_margin"
+        android:layout_marginTop="@dimen/divider_margin"
+        android:background="@color/green_100"/>
+
+    <RelativeLayout
+        android:id="@+id/left"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/divider_margin">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:text="@string/towards_left"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+        <TextView
+            android:id="@+id/towards_left_action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/up"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/divider_margin">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:text="@string/upwards"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+        <TextView
+            android:id="@+id/upwards_action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/right"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/divider_margin">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:text="@string/towards_right"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+        <TextView
+            android:id="@+id/towards_right_action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/down"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/divider_margin">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:text="@string/downwards"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+        <TextView
+            android:id="@+id/downwards_action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+    </RelativeLayout>
+
+</LinearLayout>

@@ -5,4 +5,5 @@ package com.mx.dxinl.quicklauncher;
 
 interface QuickLauncherAidlInterface {
     void updateLauncherList();
+    boolean checkAccessibility();
 }

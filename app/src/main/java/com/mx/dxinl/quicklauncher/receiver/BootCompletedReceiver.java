@@ -1,4 +1,4 @@
-package com.mx.dxinl.quicklauncher;
+package com.mx.dxinl.quicklauncher.receiver;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

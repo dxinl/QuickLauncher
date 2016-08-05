@@ -10,7 +10,7 @@ import android.database.sqlite.SQLiteDatabase;
  */
 public class DatabaseUtil {
     public static final String QUERY_PKG_NAME_SQL = "SELECT " + DatabaseHelper.COLUMN_PKG_NAME
-            + " FROM " + DatabaseHelper.TABLE;
+            + " FROM " + DatabaseHelper.PKG_NAME_TABLE;
 
     private static DatabaseUtil instance;
     private final SQLiteDatabase db;

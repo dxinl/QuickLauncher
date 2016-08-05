@@ -10,4 +10,9 @@
         android:id="@+id/done"
         android:title="@string/done"
         app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/setting"
+        android:title="@string/settings"
+        app:showAsAction="never"/>
 </menu>

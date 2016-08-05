@@ -1,8 +1,9 @@
-package com.mx.dxinl.quicklauncher;
+package com.mx.dxinl.quicklauncher.activity;
 
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.ResolveInfo;
@@ -11,6 +12,8 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.provider.Settings;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.GridLayoutManager;
@@ -24,6 +27,8 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.mx.dxinl.quicklauncher.QuickLauncherAidlInterface;
+import com.mx.dxinl.quicklauncher.R;
 import com.mx.dxinl.quicklauncher.model.Utils;
 import com.mx.dxinl.quicklauncher.model.DatabaseHelper;
 import com.mx.dxinl.quicklauncher.model.DatabaseUtil;
@@ -33,8 +38,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ServiceConnection {
+    public static final String ACCESSIBILITY_PERMISSION = "RequestAccessibilityPermission";
     private AppListAdapter adapter;
     private QuickLauncherAidlInterface binder;
+    private AlertDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +49,19 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         setContentView(R.layout.activity_main);
 
         startService(new Intent(MainActivity.this, LauncherService.class));
+    }
+
+    private void createDialog() {
+        dialog = new AlertDialog.Builder(this)
+                .setMessage(getString(R.string.accessibility_request))
+                .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                    }
+                })
+                .setNegativeButton(getString(R.string.cancel), null)
+                .create();
     }
 
     @Override
@@ -108,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
                             where.append(" OR ");
                         }
                     }
-                    dbUtil.delete(DatabaseHelper.TABLE, where.toString(), null);
+                    dbUtil.delete(DatabaseHelper.PKG_NAME_TABLE, where.toString(), null);
                 }
 
                 if (add.size() > 0) {
@@ -119,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
                         values.put(DatabaseHelper.COLUMN_PKG_NAME, add.get(i).activityInfo.packageName);
                         valuesArray[i] = values;
                     }
-                    dbUtil.bulkInsert(DatabaseHelper.TABLE, valuesArray);
+                    dbUtil.bulkInsert(DatabaseHelper.PKG_NAME_TABLE, valuesArray);
                 }
 
                 if (binder != null) {
@@ -134,6 +154,10 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
             case R.id.refresh:
                 adapter.updateData(Utils.getAppsInfo(this));
                 return true;
+
+	        case R.id.setting:
+		        startActivity(new Intent(this, SettingActivity.class));
+		        return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -141,6 +165,19 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
         binder = QuickLauncherAidlInterface.Stub.asInterface(iBinder);
+	    boolean checkAccessibility;
+	    try {
+		    checkAccessibility = binder.checkAccessibility();
+	    } catch (RemoteException e) {
+		    checkAccessibility = true;
+	    }
+
+	    if (!checkAccessibility) {
+		    if (dialog == null) {
+			    createDialog();
+		    }
+		    dialog.show();
+	    }
     }
 
     @Override

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <RadioGroup
+        android:id="@+id/actions_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/activity_horizontal_margin">
+
+        <RadioButton
+            android:id="@+id/home_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/home"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+        <RadioButton
+            android:id="@+id/back_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/back"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+        <RadioButton
+            android:id="@+id/recent_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/recent"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+        <RadioButton
+            android:id="@+id/notification_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notification"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/settings_item_size"/>
+
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/confirm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/actions_group"
+        android:layout_margin="@dimen/confirm_btn_margin"
+        android:text="@string/ok"
+        android:textColor="@android:color/black"
+        android:textSize="@dimen/settings_item_size"/>
+</RelativeLayout>

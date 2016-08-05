@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mx.dxinl.quicklauncher">
+          package="com.mx.dxinl.quicklauncher">
 
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
         android:allowBackup="true"
@@ -12,39 +12,42 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".MainActivity">
+        <activity
+            android:name=".activity.MainActivity">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 
         <activity
-            android:name=".InfoActivity"
-            android:theme="@style/TranslucentTheme" />
+            android:name=".activity.InfoActivity"
+            android:theme="@style/TranslucentTheme"/>
+
+        <activity android:name=".activity.SettingActivity"/>
 
         <service
             android:name=".services.LauncherService"
-            android:process=":launcher" />
+            android:process=":launcher"/>
 
         <service
             android:name=".services.NavBtnAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:process=":launcher">
             <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
             </intent-filter>
             <meta-data
                 android:name="android.accessibilityservice"
-                android:resource="@xml/service_accessibility" />
+                android:resource="@xml/service_accessibility"/>
         </service>
 
         <receiver
-            android:name=".BootCompletedReceiver"
+            android:name=".receiver.BootCompletedReceiver"
             android:enabled="true">
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </receiver>
     </application>
