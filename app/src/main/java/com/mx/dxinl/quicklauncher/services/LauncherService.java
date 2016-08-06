@@ -426,19 +426,32 @@ public class LauncherService extends Service {
 	private final class TriggerTouchListener implements View.OnTouchListener {
 		private static final int LONG_PRESS_THRESHOLD = 500;
 
-		private boolean moving = false;
-		private boolean canDrag = false;
+        private final Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                dragging = true;
+                if (!isIcListVisible()) {
+                    launcher.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                }
+            }
+        };
+
+        private boolean moving = false;
+//		private boolean canDrag = true;
 		private boolean dragging = false;
 		private long downTime;
 		private float downX, downY, lastX, lastY;
 
-		@Override
+        @Override
 		public boolean onTouch(View view, MotionEvent event) {
+			Log.e("Touch", String.valueOf(event.getAction()));
 			switch (event.getAction()) {
 				case MotionEvent.ACTION_DOWN:
 					lastX = downX = event.getRawX();
 					lastY = downY = event.getRawY();
 					downTime = System.currentTimeMillis();
+//					canDrag = true;
+                    handler.postDelayed(runnable, 1000);
 					return true;
 
 				case MotionEvent.ACTION_MOVE:
@@ -449,52 +462,48 @@ public class LauncherService extends Service {
 					float moveX = event.getRawX();
 					float moveY = event.getRawY();
 
-					if (!canDrag && isDrag(moveX, moveY)) {
+					if (!dragging && isMove(moveX, moveY)) {
 						moving = true;
+//						canDrag = false;
+                        handler.removeCallbacks(runnable);
 						if (isIcListVisible()) {
 							return true;
 						}
 
 						performGlobalAction(getAction(moveX, moveY));
-					} else if (!canDrag && isLongPress()) {
+					}/* else if (!canDrag && isLongPress()) {
 						canDrag = true;
 						if (!isIcListVisible()) {
 							launcher.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
 						}
-					} else if (canDrag) {
+					}*/ else if (/*canDrag && */dragging) {
 						if (isIcListVisible()) {
 							return true;
 						}
 
-						if (!dragging && (isDrag(moveX, moveY))) {
-							changeLauncherPosition((int) (moveX - lastX), (int) (moveY - lastY));
-							lastX = moveX;
-							lastY = moveY;
-							dragging = true;
-						} else if (dragging) {
-							changeLauncherPosition((int) (moveX - lastX), (int) (moveY - lastY));
-							lastX = moveX;
-							lastY = moveY;
-						}
+						changeLauncherPosition((int) (moveX - lastX), (int) (moveY - lastY));
+						lastX = moveX;
+						lastY = moveY;
 					}
 					return true;
 
 				case MotionEvent.ACTION_UP:
-					if (!moving && !canDrag && !dragging) {
+					if (!moving && /*!canDrag &&*/ !dragging) {
 						if (icList.getVisibility() == View.GONE) {
 							showIconList();
 						} else {
 							hideIconList();
 						}
-					} else if (canDrag) {
-						canDrag = false;
+					} else /*if (canDrag) {*/
+//						canDrag = false;
 						if (dragging) {
 							stickScreenEdge();
 							dragging = false;
-						}
+//						}
 					} else {
 						moving = false;
 					}
+                    handler.removeCallbacks(runnable);
 					return true;
 			}
 			return false;
@@ -583,7 +592,7 @@ public class LauncherService extends Service {
 			return icList.getVisibility() == View.VISIBLE;
 		}
 
-		private boolean isDrag(float moveX, float moveY) {
+		private boolean isMove(float moveX, float moveY) {
 			return Math.abs(moveX - downX) > moveThreshold
 					|| Math.abs(moveY - downY) > moveThreshold;
 		}
