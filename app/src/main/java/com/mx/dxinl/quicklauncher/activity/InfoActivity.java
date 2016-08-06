@@ -41,7 +41,13 @@ public class InfoActivity extends AppCompatActivity {
 						finish();
 					}
 				})
-				.setCancelable(false)
+				.setOnCancelListener(new DialogInterface.OnCancelListener() {
+					@Override
+					public void onCancel(DialogInterface dialogInterface) {
+						dialog.dismiss();
+						finish();
+					}
+				})
 				.create();
 		dialog.show();
 	}
