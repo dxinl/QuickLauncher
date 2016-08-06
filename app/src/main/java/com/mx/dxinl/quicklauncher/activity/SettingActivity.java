@@ -17,7 +17,7 @@ import com.mx.dxinl.quicklauncher.model.DatabaseUtil;
 
 /**
  * Created by dxinl on 2016/8/5.
- *
+ * <p>
  * Settings activity.
  */
 public class SettingActivity extends AppCompatActivity implements View.OnClickListener {
@@ -134,7 +134,7 @@ public class SettingActivity extends AppCompatActivity implements View.OnClickLi
 		c.close();
 
 		if (choseAction == null || choseAction.equals("")) {
-			choseAction = ACTION_HOME;
+			choseAction = getDefaultGlobalActionName(currentGesture);
 		}
 
 		switch (choseAction) {
@@ -191,5 +191,29 @@ public class SettingActivity extends AppCompatActivity implements View.OnClickLi
 		});
 
 		dialog.show();
+	}
+
+	private String getDefaultGlobalActionName(String gesture) {
+		String action;
+		switch (gesture) {
+			case LEFT_GESTURE:
+				action = ACTION_RECENT;
+				break;
+
+			case UP_GESTURE:
+			default:
+				action = ACTION_HOME;
+				break;
+
+			case RIGHT_GESTURE:
+				action = ACTION_BACK;
+				break;
+
+			case DOWN_GESTURE:
+				action = ACTION_NOTIFICATION;
+				break;
+		}
+
+		return action;
 	}
 }
