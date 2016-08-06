@@ -6,6 +6,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 /**
  * Created by Deng Xinliang on 2016/8/4.
+ *
+ * Custom SQLiteOpenHelper
  */
 public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String DATABASE_NAME = "QUICK_LAUNCHER";

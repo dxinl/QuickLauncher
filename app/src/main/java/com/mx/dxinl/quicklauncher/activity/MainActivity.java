@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ServiceConnection {
-    public static final String ACCESSIBILITY_PERMISSION = "RequestAccessibilityPermission";
     private AppListAdapter adapter;
     private QuickLauncherAidlInterface binder;
     private AlertDialog dialog;

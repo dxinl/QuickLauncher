@@ -17,6 +17,8 @@ import com.mx.dxinl.quicklauncher.model.DatabaseUtil;
 
 /**
  * Created by dxinl on 2016/8/5.
+ *
+ * Settings activity.
  */
 public class SettingActivity extends AppCompatActivity implements View.OnClickListener {
 	public static final String ACTION_HOME = "HOME";

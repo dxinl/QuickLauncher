@@ -12,6 +12,8 @@ import com.mx.dxinl.quicklauncher.R;
 
 /**
  * Created by Deng Xinliang on 2016/8/5.
+ *
+ * Activity that start by service and show dialog.
  */
 public class InfoActivity extends AppCompatActivity {
 

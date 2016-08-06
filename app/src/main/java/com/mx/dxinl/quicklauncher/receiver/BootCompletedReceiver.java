@@ -9,6 +9,8 @@ import com.mx.dxinl.quicklauncher.services.LauncherService;
 
 /**
  * Created by Deng Xinliang on 2016/8/4.
+ *
+ * Receive boot_completed.
  */
 public class BootCompletedReceiver extends BroadcastReceiver {
     @Override

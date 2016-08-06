@@ -7,6 +7,8 @@ import android.view.accessibility.AccessibilityEvent;
 
 /**
  * Created by Deng Xinliang on 2016/8/5.
+ *
+ * AccessibilityService
  */
 public class NavBtnAccessibilityService extends AccessibilityService {
     private static AccessibilityService instance;

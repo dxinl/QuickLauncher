@@ -7,6 +7,8 @@ import android.database.sqlite.SQLiteDatabase;
 
 /**
  * Created by Deng Xinliang on 2016/8/4.
+ *
+ * Simple database util.
  */
 public class DatabaseUtil {
     public static final String QUERY_PKG_NAME_SQL = "SELECT " + DatabaseHelper.COLUMN_PKG_NAME

@@ -10,6 +10,7 @@ import java.util.List;
 /**
  * Created by Deng Xinliang on 2016/8/3.
  *
+ * Simple utils.
  */
 public class Utils {
     public static List<ResolveInfo> getAppsInfo(Context context) {
