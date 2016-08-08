@@ -4,12 +4,16 @@ import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.animation.Animator;
 import android.animation.ValueAnimator;
+import android.app.ActivityManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
@@ -23,6 +27,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
@@ -643,11 +648,15 @@ public class LauncherService extends Service {
 			itemView.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View v) {
-					Intent launchIntent = packageManager
-							.getLaunchIntentForPackage(info.activityInfo.packageName);
-					if (launchIntent != null) {
-						context.startActivity(launchIntent);
-					}
+					ActivityInfo activityInfo = info.activityInfo;
+					String packageName = activityInfo.packageName;
+					ComponentName componentName = new ComponentName(activityInfo.applicationInfo.packageName, activityInfo.name);
+					Intent intent = new Intent(Intent.ACTION_MAIN);
+					intent.addCategory(Intent.CATEGORY_LAUNCHER);
+					intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+					intent.setComponent(componentName);
+					startActivity(intent);
+
 					hideIconList();
 				}
 			});
