@@ -81,9 +81,8 @@ public class LauncherService extends Service {
             return LauncherService.this.checkAccessibility();
         }
     };
-    private final TriggerTouchListener triggerTouchListener = new TriggerTouchListener();
+    private TriggerTouchListener triggerTouchListener;
 
-    private float moveThreshold;
     private View launcher;
     private ImageView trigger;
     private RecyclerView icList;
@@ -101,6 +100,7 @@ public class LauncherService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        triggerTouchListener = new TriggerTouchListener();
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(CONFIG_CHANGE_ACTION);
@@ -126,7 +126,6 @@ public class LauncherService extends Service {
 
         Context context = getApplicationContext();
         LayoutInflater inflater = LayoutInflater.from(context);
-        moveThreshold = ViewConfiguration.get(context).getScaledTouchSlop();
         launcher = inflater.inflate(R.layout.service_launcher, null);
         LayoutParams params = generateLayoutParams();
 
@@ -405,7 +404,7 @@ public class LauncherService extends Service {
     private static final class QuickLauncherHandler extends Handler {
         private WeakReference<LauncherService> ref;
 
-        public QuickLauncherHandler(LauncherService service) {
+        QuickLauncherHandler(LauncherService service) {
             ref = new WeakReference<>(service);
         }
 
@@ -427,10 +426,17 @@ public class LauncherService extends Service {
     }
 
     private final class TriggerTouchListener implements View.OnTouchListener {
-        public static final int ERRO_ACTION_NAME = -99999;
+        private static final int ERR_ACTION_NAME = -99999;
         private static final int LONG_PRESS_THRESHOLD = 500;
         private boolean moving = false;
         private boolean dragging = false;
+        private final int mTouchSlop;
+
+        TriggerTouchListener() {
+            final ViewConfiguration configuration = ViewConfiguration.get(LauncherService.this);
+            mTouchSlop = configuration.getScaledPagingTouchSlop();
+        }
+
         private final Runnable runnable = new Runnable() {
             @Override
             public void run() {
@@ -522,7 +528,7 @@ public class LauncherService extends Service {
             if (c.moveToNext()) {
                 String actionStr = c.getString(c.getColumnIndex(DatabaseHelper.GLOBAL_ACTION));
                 int x = getMatchGlobalActionByName(actionStr);
-                if (x != ERRO_ACTION_NAME) {
+                if (x != ERR_ACTION_NAME) {
                     return x;
                 }
             }
@@ -545,7 +551,7 @@ public class LauncherService extends Service {
                     return AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS;
 
                 default:
-                    return ERRO_ACTION_NAME;
+                    return ERR_ACTION_NAME;
             }
         }
 
@@ -596,21 +602,18 @@ public class LauncherService extends Service {
         }
 
         private boolean isMove(float moveX, float moveY) {
-            return Math.abs(moveX - downX) > moveThreshold
-                    || Math.abs(moveY - downY) > moveThreshold;
+            return Math.abs(moveX - downX) > mTouchSlop
+                    || Math.abs(moveY - downY) > mTouchSlop;
         }
     }
 
-    /**
-     * Created by Deng Xinliang on 2016/8/3.
-     */
     private final class ViewHolder extends RecyclerView.ViewHolder {
         private final PackageManager packageManager;
         private Context context;
         private ImageView appIcon;
         private TextView appName;
 
-        public ViewHolder(View itemView) {
+        ViewHolder(View itemView) {
             super(itemView);
             context = itemView.getContext();
 
@@ -635,42 +638,38 @@ public class LauncherService extends Service {
             packageManager = context.getPackageManager();
         }
 
-        public void initItemView(ResolveInfo info) {
+        void initItemView(ResolveInfo info) {
             appIcon.setImageDrawable(info.loadIcon(packageManager));
             appName.setText(info.loadLabel(packageManager));
             setOnClickListener(info);
         }
 
-        public void setOnClickListener(final ResolveInfo info) {
+        void setOnClickListener(final ResolveInfo info) {
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     ActivityInfo activityInfo = info.activityInfo;
-                    String packageName = activityInfo.packageName;
                     ComponentName componentName = new ComponentName(activityInfo.applicationInfo.packageName, activityInfo.name);
-                    Intent intent = new Intent(Intent.ACTION_MAIN);
-                    intent.addCategory(Intent.CATEGORY_LAUNCHER);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-                    intent.setComponent(componentName);
+                    Intent intent = new Intent(Intent.ACTION_MAIN)
+                            .addCategory(Intent.CATEGORY_LAUNCHER)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            .addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                            .setComponent(componentName);
                     startActivity(intent);
-
                     hideIconList();
                 }
             });
         }
     }
 
-    /**
-     * Created by Deng Xinliang on 2016/8/3.
-     */
     private final class IconListAdapter extends RecyclerView.Adapter<ViewHolder> {
         private List<ResolveInfo> appsInfo = new ArrayList<>();
 
-        public IconListAdapter(List<ResolveInfo> appsInfo) {
+        IconListAdapter(List<ResolveInfo> appsInfo) {
             this.appsInfo.addAll(appsInfo);
         }
 
-        public void updateData(List<ResolveInfo> appsInfo) {
+        void updateData(List<ResolveInfo> appsInfo) {
             this.appsInfo.clear();
             this.appsInfo.addAll(appsInfo);
             notifyDataSetChanged();
