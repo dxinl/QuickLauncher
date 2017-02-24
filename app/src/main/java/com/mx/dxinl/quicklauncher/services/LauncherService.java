@@ -154,10 +154,11 @@ public class LauncherService extends Service {
 
     private int getParamsType() {
         int type;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+        int sdkInt = Build.VERSION.SDK_INT;
+        if (sdkInt < Build.VERSION_CODES.KITKAT || sdkInt > Build.VERSION_CODES.M) {
             type = LayoutParams.TYPE_PHONE;
         } else {
-            type = LayoutParams.TYPE_TOAST;
+            type = LayoutParams.TYPE_PHONE;
         }
         return type;
     }
