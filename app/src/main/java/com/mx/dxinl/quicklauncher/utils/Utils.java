@@ -1,4 +1,4 @@
-package com.mx.dxinl.quicklauncher.model;
+package com.mx.dxinl.quicklauncher.utils;
 
 import android.content.Context;
 import android.content.Intent;

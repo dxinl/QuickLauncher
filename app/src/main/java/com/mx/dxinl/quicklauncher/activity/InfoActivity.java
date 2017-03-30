@@ -13,42 +13,42 @@ import com.mx.dxinl.quicklauncher.R;
 /**
  * Created by Deng Xinliang on 2016/8/5.
  *
- * Activity that start by service and show dialog.
+ * Activity that start by service and show mDialog.
  */
 public class InfoActivity extends AppCompatActivity {
 
-	private AlertDialog dialog;
+	private AlertDialog mDialog;
 
 	@Override
 	protected void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_info);
 
-		dialog = new AlertDialog.Builder(this)
+		mDialog = new AlertDialog.Builder(this)
 				.setMessage(getString(R.string.accessibility_request))
 				.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialogInterface, int i) {
 						startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-						dialog.dismiss();
+						mDialog.dismiss();
 						finish();
 					}
 				})
 				.setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialogInterface, int i) {
-						dialog.dismiss();
+						mDialog.dismiss();
 						finish();
 					}
 				})
 				.setOnCancelListener(new DialogInterface.OnCancelListener() {
 					@Override
 					public void onCancel(DialogInterface dialogInterface) {
-						dialog.dismiss();
+						mDialog.dismiss();
 						finish();
 					}
 				})
 				.create();
-		dialog.show();
+		mDialog.show();
 	}
 }

@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import com.mx.dxinl.quicklauncher.services.LauncherService;
+import com.mx.dxinl.quicklauncher.service.LauncherService;
 
 /**
  * Created by Deng Xinliang on 2016/8/4.

@@ -1,8 +1,7 @@
-package com.mx.dxinl.quicklauncher.services;
+package com.mx.dxinl.quicklauncher.service;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
-import android.os.Binder;
 import android.view.accessibility.AccessibilityEvent;
 
 /**
@@ -11,22 +10,22 @@ import android.view.accessibility.AccessibilityEvent;
  * AccessibilityService
  */
 public class NavBtnAccessibilityService extends AccessibilityService {
-    private static AccessibilityService instance;
+    private static AccessibilityService sInstance;
 
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
-        instance = this;
+        sInstance = this;
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
-        instance = null;
+        sInstance = null;
         return super.onUnbind(intent);
     }
 
-    public static AccessibilityService getInstance() {
-        return instance;
+    public static AccessibilityService getsInstance() {
+        return sInstance;
     }
 
     @Override

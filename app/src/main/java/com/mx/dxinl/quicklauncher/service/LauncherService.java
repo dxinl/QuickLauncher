@@ -1,4 +1,4 @@
-package com.mx.dxinl.quicklauncher.services;
+package com.mx.dxinl.quicklauncher.service;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
@@ -45,7 +45,7 @@ import com.mx.dxinl.quicklauncher.activity.InfoActivity;
 import com.mx.dxinl.quicklauncher.activity.SettingActivity;
 import com.mx.dxinl.quicklauncher.model.DatabaseHelper;
 import com.mx.dxinl.quicklauncher.model.DatabaseUtil;
-import com.mx.dxinl.quicklauncher.model.Utils;
+import com.mx.dxinl.quicklauncher.utils.Utils;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -64,8 +64,8 @@ public class LauncherService extends Service {
     private static final String LANDSCAPE_POSITION_Y = "Landscape_Y";
     private static final String CONFIG_CHANGE_ACTION = "android.intent.action" +
             ".CONFIGURATION_CHANGED";
-    private static final String ACCESSIBILITY_NAME = "com.mx.dxinl.quicklauncher/.services" +
-            ".NavBtnAccessibilityService";
+    private static final String ACCESSIBILITY_NAME = "com.mx.dxinl.quicklauncher/.service."
+            + NavBtnAccessibilityService.class.getSimpleName();
 
     private static final int UPDATE_IC_LIST = 0x0408;
 
@@ -155,10 +155,10 @@ public class LauncherService extends Service {
     private int getParamsType() {
         int type;
         int sdkInt = Build.VERSION.SDK_INT;
-        if (sdkInt < Build.VERSION_CODES.KITKAT || sdkInt > Build.VERSION_CODES.M) {
+        if (sdkInt < Build.VERSION_CODES.KITKAT || sdkInt > 24) {
             type = LayoutParams.TYPE_PHONE;
         } else {
-            type = LayoutParams.TYPE_PHONE;
+            type = LayoutParams.TYPE_TOAST;
         }
         return type;
     }
@@ -586,7 +586,7 @@ public class LauncherService extends Service {
         }
 
         private void performGlobalAction(int action) {
-            AccessibilityService service = NavBtnAccessibilityService.getInstance();
+            AccessibilityService service = NavBtnAccessibilityService.getsInstance();
             if (service != null) {
                 service.performGlobalAction(action);
             } else {

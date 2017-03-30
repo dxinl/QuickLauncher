@@ -27,11 +27,11 @@
         <activity android:name=".activity.SettingActivity"/>
 
         <service
-            android:name=".services.LauncherService"
+            android:name=".service.LauncherService"
             android:process=":launcher"/>
 
         <service
-            android:name=".services.NavBtnAccessibilityService"
+            android:name=".service.NavBtnAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:process=":launcher">
             <intent-filter>

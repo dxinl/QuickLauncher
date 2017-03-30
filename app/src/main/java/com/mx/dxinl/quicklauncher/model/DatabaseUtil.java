@@ -14,36 +14,36 @@ public class DatabaseUtil {
     public static final String QUERY_PKG_NAME_SQL = "SELECT " + DatabaseHelper.COLUMN_PKG_NAME
             + " FROM " + DatabaseHelper.PKG_NAME_TABLE;
 
-    private static DatabaseUtil instance;
-    private final SQLiteDatabase db;
+    private static DatabaseUtil sInstance;
+    private final SQLiteDatabase mDb;
 
     private DatabaseUtil(Context context) {
         DatabaseHelper dbHelper = new DatabaseHelper(context);
-        db = dbHelper.getWritableDatabase();
+        mDb = dbHelper.getWritableDatabase();
     }
 
     public static DatabaseUtil createDbUtil(Context context) {
-        if (instance == null) {
-            instance = new DatabaseUtil(context);
+        if (sInstance == null) {
+            sInstance = new DatabaseUtil(context);
         }
-        return instance;
+        return sInstance;
     }
 
     public void execSQL(String sql, String[] args) {
-        db.execSQL(sql, args);
+        mDb.execSQL(sql, args);
     }
 
     public Cursor query(String sql, String[] selectionArgs) {
-        return db.rawQuery(sql, selectionArgs);
+        return mDb.rawQuery(sql, selectionArgs);
     }
 
     public void bulkInsert(String table, ContentValues[] valuesArray) {
         for (ContentValues values : valuesArray) {
-            db.insert(table, null, values);
+            mDb.insert(table, null, values);
         }
     }
 
     public void delete(String table, String whereClause, String[] whereArgs) {
-        db.delete(table, whereClause, whereArgs);
+        mDb.delete(table, whereClause, whereArgs);
     }
 }
